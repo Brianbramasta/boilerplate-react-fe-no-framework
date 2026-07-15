@@ -57,8 +57,14 @@ Perintah ini juga otomatis jalan lewat Husky pre-commit/pre-push, tapi bisa dija
 npm run lint          # ESLint
 npm run format:check  # Cek format Prettier (npm run format untuk auto-fix)
 npx tsc -b --noEmit    # Type-check
-npm run build          # Full build (juga jalan di pre-push & CI)
+npm run build          # Full build (juga jalan di pre-push)
 ```
+
+### 5. Bikin Pull Request
+
+Ada 1 template PR (`.github/pull_request_template.md`) yang **otomatis ke-load di setiap PR baru**, tidak peduli target branch-nya apa (GitHub tidak punya fitur auto-pilih template per branch tanpa GitHub Action — jadi ini didesain 1 file saja biar tidak ada langkah pilih manual yang gampang kelewat).
+
+Isinya ada checklist dasar yang wajib untuk semua PR, plus dua section tambahan (`Tambahan kalau target staging` dan `Tambahan kalau target main`) — isi bagian yang relevan sesuai branch tujuan PR-mu, hapus yang tidak relevan.
 
 ---
 
