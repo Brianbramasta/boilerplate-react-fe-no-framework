@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+documentation
+src/icons/components
+src/_reference_ui/manifest.ts
+package-lock.json

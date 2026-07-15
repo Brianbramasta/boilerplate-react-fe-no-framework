@@ -1,0 +1,312 @@
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { startLoading, stopLoading } from '../stores/loadingStore';
+import useTemporaryApiStore from '../stores/useTemporaryApiStore';
+import handleApiError from '../utils/errorHandle';
+import { handleApiSuccess } from '../utils/successHandle';
+import { env } from '../config/env';
+
+export interface Meta {
+  status: number;
+  message: string;
+}
+
+// Interface untuk response API
+export interface ApiResponse<T = unknown> {
+  meta: Meta;
+  data: T;
+}
+
+// Interface untuk error response
+export interface ApiError {
+  meta: Meta;
+  data: null;
+  errors?: Record<string, string[]>;
+}
+
+class ApiService {
+  private instance: AxiosInstance;
+  private baseURL: string;
+
+  constructor() {
+    // Base URL bisa dioverride sementara lewat useTemporaryApiStore (dev tooling),
+    // fallback ke VITE_API_URL/VITE_API_PREFIX dari environment.
+    const tempApiUrl = useTemporaryApiStore.getState().apiUrl;
+    const tempApiPrefix = useTemporaryApiStore.getState().apiPrefix;
+
+    if (tempApiUrl && tempApiPrefix) {
+      this.baseURL = tempApiUrl + tempApiPrefix;
+    } else {
+      this.baseURL = env.apiUrl + env.apiPrefix;
+    }
+
+    this.instance = axios.create({
+      baseURL: this.baseURL,
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
+        // hapus header ini jika tidak diperlukan
+        'ngrok-skip-browser-warning': 'true',
+      },
+    });
+
+    this.setupInterceptors();
+  }
+
+  private setupInterceptors() {
+    this.instance.interceptors.request.use(
+      (config) => {
+        // aktifkan loading saat request dimulai
+        startLoading();
+        const token = this.getToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        // jika gagal sebelum request dikirim, matikan loading
+        stopLoading();
+        return Promise.reject(error);
+      },
+    );
+
+    // Response interceptor untuk handle error dan refresh token
+    this.instance.interceptors.response.use(
+      (response: AxiosResponse) => {
+        // matikan loading setelah response sukses
+        stopLoading();
+        return response;
+      },
+      async (error) => {
+        // matikan loading untuk response error
+        stopLoading();
+        const originalRequest = error.config;
+
+        // Handle 401 Unauthorized
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+
+          try {
+            // Coba refresh token jika ada refresh token
+            const refreshToken = this.getRefreshToken();
+            if (refreshToken) {
+              const newToken = await this.refreshToken(refreshToken);
+              this.setToken(newToken);
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              return this.instance(originalRequest);
+            }
+          } catch (refreshError) {
+            // Jika refresh gagal, logout user
+            this.removeTokens();
+            window.location.href = '/signin';
+            return Promise.reject(refreshError);
+          }
+        }
+
+        // Show notification using global handler (extracts messages from response)
+        try {
+          // handleApiError(error, { title: 'API Error' });
+          handleApiError(error);
+        } catch {
+          // ignore notification errors
+        }
+
+        // Format error response (kept for upstream handling)
+        const errorData = error.response?.data as ApiError | undefined;
+
+        if (errorData && errorData.meta) {
+          return Promise.reject(errorData);
+        }
+
+        const fallbackError: ApiError = {
+          meta: {
+            status: error.response?.status || 500,
+            message: error.message || 'Terjadi kesalahan',
+          },
+          data: null,
+        };
+
+        return Promise.reject(fallbackError);
+      },
+    );
+  }
+
+  // Token management
+  private getToken(): string | null {
+    return localStorage.getItem('access_token');
+  }
+
+  private getRefreshToken(): string | null {
+    return localStorage.getItem('refresh_token');
+  }
+
+  public setToken(token: string): void {
+    localStorage.setItem('access_token', token);
+  }
+
+  public setRefreshToken(token: string): void {
+    localStorage.setItem('refresh_token', token);
+  }
+
+  public removeTokens(): void {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  }
+
+  // Refresh token method
+  private async refreshToken(refreshToken: string): Promise<string> {
+    const response = await this.instance.post('/auth/refresh', { refreshToken });
+    return response.data.data.accessToken;
+  }
+
+  // HTTP methods
+  public async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const response = await this.instance.get(url, config);
+    return response.data;
+  }
+
+  public async post<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig & { showNotification?: boolean },
+  ): Promise<ApiResponse<T>> {
+    const response = await this.instance.post(url, data, config);
+    const showNotification = config?.showNotification !== false; // default true
+    handleApiSuccess(response.data, showNotification);
+    return response.data;
+  }
+
+  public async put<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig & { showNotification?: boolean },
+  ): Promise<ApiResponse<T>> {
+    const response = await this.instance.put(url, data, config);
+    const showNotification = config?.showNotification !== false; // default true
+    handleApiSuccess(response.data, showNotification);
+    return response.data;
+  }
+
+  public async patch<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig & { showNotification?: boolean },
+  ): Promise<ApiResponse<T>> {
+    const response = await this.instance.patch(url, data, config);
+    const showNotification = config?.showNotification !== false; // default true
+    handleApiSuccess(response.data, showNotification);
+    return response.data;
+  }
+
+  public async delete<T>(
+    url: string,
+    config?: AxiosRequestConfig & { showNotification?: boolean },
+  ): Promise<ApiResponse<T>> {
+    const response = await this.instance.delete(url, config);
+    const showNotification = config?.showNotification !== false; // default true
+    handleApiSuccess(response.data, showNotification);
+    return response.data;
+  }
+
+  // Utility method untuk upload file
+  public async uploadFile<T>(
+    url: string,
+    file: File,
+    additionalData?: Record<string, any>,
+  ): Promise<ApiResponse<T>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    if (additionalData) {
+      Object.keys(additionalData).forEach((key) => {
+        formData.append(key, additionalData[key]);
+      });
+    }
+
+    const response = await this.instance.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  }
+
+  /**
+   * Utility method untuk build query string dengan support filter_column parameters
+   * Handles complex nested array parameters like filter_column[column_name][in][]=value
+   * @param params - Object containing query parameters
+   * @returns Query string ready to append to URL
+   */
+  public buildQueryString(params?: Record<string, any>, options?: { sendAll?: boolean }): string {
+    if (!params) return '';
+
+    const queryParams = new URLSearchParams();
+    const extraParts: string[] = [];
+
+    Object.keys(params).forEach((key) => {
+      const value = params[key];
+
+      // Handle filter_column[column_name][in][] parameters separately
+      if (key.startsWith('filter_column[')) {
+        const values = Array.isArray(value)
+          ? value
+          : value === undefined || value === null
+            ? []
+            : String(value)
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+
+        values.forEach((v) => {
+          extraParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`);
+        });
+      }
+      // Handle `filter` which can be string (comma-separated) or array and should become multiple `filter[]` entries
+      else if (key === 'filter') {
+        if (value === undefined || value === null || value === '') return;
+        const values = String(value)
+          .split('~!@')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        values.forEach((v) => queryParams.append('filter[]', v));
+      }
+      // Handle regular array parameters (e.g., tags -> tags[])
+      else if (Array.isArray(value)) {
+        value.forEach((v) => queryParams.append(`${key}[]`, v));
+      }
+
+      // Handle regular parameters
+      else if ((value !== undefined && value !== null && value !== '') || options?.sendAll) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const baseQuery = queryParams.toString();
+    const extraQuery = extraParts.join('&');
+    if (baseQuery && extraQuery) return `${baseQuery}&${extraQuery}`;
+    return baseQuery || extraQuery;
+  }
+}
+
+// Export singleton instance
+export const apiService = new ApiService();
+
+// Export helper functions
+export const setAuthTokens = (accessToken: string, refreshToken?: string) => {
+  apiService.setToken(accessToken);
+  if (refreshToken) {
+    apiService.setRefreshToken(refreshToken);
+  }
+};
+
+export const removeAuthTokens = () => {
+  apiService.removeTokens();
+};
+
+export const isAuthenticated = (): boolean => {
+  return !!localStorage.getItem('access_token');
+};
+
+export default apiService;

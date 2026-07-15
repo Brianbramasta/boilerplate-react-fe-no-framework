@@ -1,0 +1,8 @@
+echo "🎨 Checking format..."
+npm run format:check || exit 1
+
+echo "🔍 Running ESLint..."
+npm run lint || exit 1
+
+echo "🧪 Running Tests..."
+npm test || exit 1
