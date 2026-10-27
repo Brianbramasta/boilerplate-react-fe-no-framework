@@ -1,848 +1,218 @@
-## 📝 Ringkasan Singkat
+# HRIS Frontend
 
-Ini adalah starter template frontend yang dibangun dengan:
+Starter template frontend HRIS berbasis React, TypeScript, dan Vite. Fitur baru mengikuti pola **Feature-Based Clean Architecture**: setiap fitur dipisahkan ke layer Domain, Data, Presentation, dan DI, dengan `index.ts` sebagai public API.
 
-- **React 19** + **TypeScript** (strict mode)
-- **Vite** (cepat banget buat development!)
-- **Clean Architecture** + **Feature-Based Structure** (biar kode rapi dan mudah di-maintain)
+## Aturan Arsitektur
 
-### ✅ Contoh Fitur Nyata yang Sudah Jalan di Repo Ini
+Gunakan tiga dokumen ini sebagai sumber aturan ketika menambah atau mengubah fitur:
 
-Dua fitur di bawah ini **benar-benar ada di kode** (bukan cuma contoh dokumentasi) dan bisa langsung dibuka/dijalankan sebagai referensi pola:
+1. [`folder-struktur.md`](./documentation/rules/domain-data-presentation/27%20Oktober%202026/folder-struktur.md) — struktur folder dan tanggung jawab setiap layer.
+2. [`mermaid diagram.md`](./documentation/rules/domain-data-presentation/27%20Oktober%202026/mermaid%20diagram.md) — arah dependensi dan batas antarfitur.
+3. [`rules.md`](./documentation/rules/domain-data-presentation/27%20Oktober%202026/rules.md) — detail implementasi Domain, Data, DI, Presentation, dan public API.
 
-| Fitur     | Lokasi                 | Yang didemokan                                                                                                                       |
-| --------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `landing` | `src/features/landing` | Pola Clean Architecture dengan **dummy data** (tanpa backend)                                                                        |
-| `auth`    | `src/features/auth`    | Pola yang sama tapi **benar-benar panggil API** (`apiService`), simpan token, dan di-wire ke routing terproteksi (`ProtectedOutlet`) |
+Jika contoh implementasi di tempat lain berbeda, ikuti aturan dan struktur pada dokumen-dokumen di atas untuk fitur baru.
 
-Kalau kamu bingung dengan contoh kode di bawah (yang pakai nama `employee`/`attendance` sebagai ilustrasi), buka langsung dua folder di atas — itu implementasi nyata yang sudah teruji jalan.
+## Teknologi
 
-Selain itu, `src/_reference_ui/` berisi katalog komponen contoh dari template lama (bukan bagian aplikasi aktif) — bisa dilihat di aplikasi lewat menu sidebar **Reference UI** (`/reference-ui`) saat sudah login.
+- React 19, TypeScript strict mode, dan Vite
+- React Router untuk routing
+- TanStack Query untuk state server
+- Zustand untuk state UI lokal yang memang perlu dibagi
+- Tailwind CSS untuk styling
+- Jest dan Testing Library untuk pengujian
 
----
+## Menjalankan Project
 
-## 🚀 Cara Menjalankan Proyek
-
-### 1. Pasang Dependensi
-
-Pertama, install semua package yang dibutuhkan:
+Pastikan Node.js dan npm tersedia, lalu jalankan dari root repository:
 
 ```powershell
 npm install
-```
-
-### 2. Jalankan Aplikasi (Dev Server)
-
-Kemudian jalankan aplikasi di mode development:
-
-```powershell
 npm run dev
 ```
 
-Aplikasi akan berjalan di `http://localhost:5173` (atau port lain yang ditampilkan di terminal).
+Vite akan menampilkan URL development server, biasanya `http://localhost:5173`.
 
-### 3. Jalankan Test
-
-Untuk menjalankan unit test:
+Perintah project:
 
 ```powershell
-npm test
+npm test -- --runInBand
+npm run lint
+npm run format:check
+npm run build
 ```
 
-### 4. Cek Kualitas Kode Sebelum Commit
+`npm run build` menjalankan type-check TypeScript dan production build Vite. Script development dan build juga memperbarui manifest komponen `src/_reference_ui/manifest.ts`.
 
-Perintah ini juga otomatis jalan lewat Husky pre-commit/pre-push, tapi bisa dijalankan manual:
+## Struktur Feature
 
-```powershell
-npm run lint          # ESLint
-npm run format:check  # Cek format Prettier (npm run format untuk auto-fix)
-npx tsc -b --noEmit    # Type-check
-npm run build          # Full build (juga jalan di pre-push)
-```
+Struktur feature mengikuti aturan project. Tidak semua folder wajib dibuat: tambahkan hanya bagian yang dibutuhkan oleh fitur.
 
-### 5. Bikin Pull Request
-
-Ada 1 template PR (`.github/pull_request_template.md`) yang **otomatis ke-load di setiap PR baru**, tidak peduli target branch-nya apa (GitHub tidak punya fitur auto-pilih template per branch tanpa GitHub Action — jadi ini didesain 1 file saja biar tidak ada langkah pilih manual yang gampang kelewat).
-
-Isinya ada checklist dasar yang wajib untuk semua PR, plus dua section tambahan (`Tambahan kalau target staging` dan `Tambahan kalau target main`) — isi bagian yang relevan sesuai branch tujuan PR-mu, hapus yang tidak relevan.
-
----
-
-## 🏗️ Arsitektur Proyek (Yang Penting Kamu Pahami!)
-
-Proyek ini menggunakan **Feature-Based Clean Architecture**. Artinya:
-
-- Semua kode dipecah per **fitur** (contoh: `landing`, `auth`, `payroll`, dll.)
-- Setiap fitur punya **3 layer utama** dengan tugas masing-masing
-- Layer tidak boleh "lompat" (harus berurutan)
-
-### 🎯 Alur Kerja Sederhana
-
-```
-User klik tombol
-  → Page (tampilan)
-    → Hook (logic)
-      → Usecase (aturan bisnis)
-        → Repository (akses data)
-          → Service (panggil API)
-            → Backend
-```
-
----
-
-## 📁 Struktur Folder
-
-### 🎯 Versi Ringkas
-
-```bash
+```text
 src/
-├── features/              # 🔥 Semua fitur bisnis
-│   ├── employee/          # Fitur karyawan
-│   │   ├── domain/        # Business logic & entities
-│   │   ├── data/          # API calls & data mapping
-│   │   ├── presentation/  # UI components & pages
-│   │   └── index.ts       # Export public API
-│   └── attendance/       # Fitur absensi
+├── features/
+│   └── <feature>/
+│       ├── index.ts                         # Public API fitur
 │       ├── domain/
+│       │   ├── entities/                    # Entity bisnis murni
+│       │   ├── repositories/                # Kontrak repository
+│       │   └── usecases/                    # Alur dan aturan bisnis
 │       ├── data/
+│       │   ├── dtos/                        # Bentuk data dari sumber data
+│       │   ├── mappers/                     # DTO <-> entity
+│       │   ├── services/                    # Akses API atau sumber data lain
+│       │   └── repositories/                # Implementasi kontrak Domain
+│       ├── di/                              # Merakit service, repository, use case
 │       ├── presentation/
-│       └── index.ts
-├── shared/                # 🔧 Komponen reusable
-│   ├── components/        # UI components umum
-│   ├── hooks/             # Custom hooks umum
-│   ├── utils/             # Helper functions
-│   └── types/             # Shared types
-├── infrastructure/        # 🌐 External dependencies
-│   └── api/               # API client & endpoints
-├── App.tsx                # 🏠 Root component
-└── main.tsx               # 🚀 Entry point
+│       │   ├── components/                  # Komponen UI khusus fitur
+│       │   ├── hooks/                       # Adapter UI, termasuk TanStack Query
+│       │   ├── pages/                       # Halaman fitur
+│       │   └── store/                       # State UI lokal jika dibutuhkan
+│       └── __tests__/
+│           ├── domain/
+│           ├── data/
+│           └── presentation/
+├── components/                              # Komponen lintas fitur yang sudah ada
+├── hooks/                                   # Hook lintas fitur yang sudah ada
+├── stores/                                  # State global aplikasi yang sudah ada
+├── routes/
+│   └── AppRoutes.tsx                        # Registrasi route aplikasi
+├── layout/
+├── utils/
+├── App.tsx
+└── main.tsx
 ```
 
-### �📋 Versi Lengkap (Detail Implementasi)
+`shared/` dan `infrastructure/` pada blueprint dokumentasi adalah batas tanggung jawab arsitektur. Sebelum menambah folder global baru, periksa folder global yang sudah tersedia di project agar tidak membuat duplikasi.
 
-Berikut adalah struktur folder utama yang kamu butuhkan ketahui:
+### Contoh Implementasi: Fitur Karyawan
 
-```bash
-src/
-├── features/          # Semua fitur ada di sini! (paling penting)
-│   ├── landing/      # Contoh fitur landing
-│   │   ├── domain/    # Layer bisnis (aturan & data)
-│   │   │   ├── entities/    # Definisi tipe data
-│   │   │   └── usecases/    # Logic bisnis
-│   │   ├── data/      # Layer data (API & mapping)
-│   │   │   ├── models/      # Rubah format data API
-│   │   │   ├── services/    # Panggil API
-│   │   │   └── repositories/ # Hubungin service & model
-│   │   ├── presentation/ # Layer tampilan (UI)
-│   │   │   ├── hooks/       # Logic untuk UI
-│   │   │   ├── components/  # Komponen UI khusus fitur
-│   │   │   └── pages/       # Halaman utama fitur
-│   │   └── index.ts   # Export apa yang bisa dipakai luar fitur
-│   │
-│   └── employee/     # Fitur Karyawan (contoh implementasi lengkap)
-│       ├── domain/    # Layer bisnis (aturan & data)
-│       │   ├── entities/    # Definisi tipe data
-│       │   │   ├── Employee.ts           # Interface Employee
-│       │   │   ├── Attendance.ts         # Interface Attendance
-│       │   │   └── Position.ts           # Interface Position
-│       │   └── usecases/    # Logic bisnis
-│       │       ├── employee-data/
-│       │       │   ├── GetEmployees.ts    # Logic get data karyawan
-│       │       │   ├── CreateEmployee.ts  # Logic create karyawan
-│       │       │   └── UpdateEmployee.ts  # Logic update karyawan
-│       │       └── attendance/
-│       │           ├── GetAttendance.ts   # Logic get data absensi
-│       │           ├── CreateAttendance.ts # Logic create absensi
-│       │           └── UpdateAttendance.ts # Logic update absensi
-│       │
-│       ├── data/      # Layer data (API & mapping)
-│       │   ├── models/      # Rubah format data API
-│       │   │   ├── employee-data/
-│       │   │   │   ├── EmployeeModel.ts    # Model untuk API response
-│       │   │   │   └── EmployeeMapper.ts   # Mapper API ke domain
-│       │   │   └── attendance/
-│       │   │       ├── AttendanceModel.ts  # Model untuk API response
-│       │   │       └── AttendanceMapper.ts # Mapper API ke domain
-│       │   ├── services/    # Panggil API
-│       │   │   ├── employee-data/
-│       │   │   │   ├── FetchEmployees.ts   # API call get employees
-│       │   │   │   ├── CreateEmployee.ts   # API call create employee
-│       │   │   │   └── UpdateEmployee.ts   # API call update employee
-│       │   │   └── attendance/
-│       │   │       ├── FetchAttendance.ts  # API call get attendance
-│       │   │       ├── CreateAttendance.ts # API call create attendance
-│       │   │       └── UpdateAttendance.ts # API call update attendance
-│       │   └── repositories/ # Hubungin service & model
-│       │       ├── employee-data/
-│       │       │   └── EmployeeRepository.ts # Repository untuk employee
-│       │       └── attendance/
-│       │           └── AttendanceRepository.ts # Repository untuk attendance
-│       │
-│       ├── presentation/ # Layer tampilan (UI)
-│       │   ├── hooks/       # Logic untuk UI
-│       │   │   ├── employee-data/
-│       │   │   │   ├── UseEmployeeData.ts   # Hook untuk data karyawan
-│       │   │   │   └── UseEmployeeForm.ts   # Hook untuk form karyawan
-│       │   │   └── attendance/
-│       │   │       ├── UseAttendanceData.ts # Hook untuk data absensi
-│       │   │       └── UseAttendanceForm.ts # Hook untuk form absensi
-│       │   ├── components/  # Komponen UI khusus fitur
-│       │   │   ├── employee-data/
-│       │   │   │   ├── EmployeeTable.tsx   # Tabel data karyawan
-│       │   │   │   ├── EmployeeForm.tsx    # Form input karyawan
-│       │   │   │   └── EmployeeCard.tsx    # Card detail karyawan
-│       │   │   └── attendance/
-│       │   │       ├── AttendanceTable.tsx  # Tabel data absensi
-│       │   │       ├── AttendanceForm.tsx   # Form input absensi
-│       │   │       └── AttendanceCalendar.tsx # Kalender absensi
-│       │   └── pages/       # Halaman utama fitur
-│       │       ├── employee-data/
-│       │       │   ├── EmployeeListPage.tsx # Halaman daftar karyawan
-│       │       │   ├── EmployeeDetailPage.tsx # Halaman detail karyawan
-│       │       │   └── EmployeeFormPage.tsx # Halaman form karyawan
-│       │       └── attendance/
-│       │           ├── AttendanceListPage.tsx # Halaman daftar absensi
-│       │           ├── AttendanceDetailPage.tsx # Halaman detail absensi
-│       │           └── AttendanceFormPage.tsx # Halaman form absensi
-│       │
-│       └── index.ts   # Export apa yang bisa dipakai luar fitur
-│
-├── components/        # Komponen UI yang bisa dipakai semua fitur
-├── hooks/             # Hook umum yang bisa dipakai semua fitur
-├── utils/             # Fungsi helper (format tanggal, dll.)
-├── stores/            # State global (Auth, theme, dll.)
-├── types/             # Tipe data umum
-├── App.tsx            # Root aplikasi
-└── main.tsx           # Entry point aplikasi
-```
+Fitur demo yang mengikuti struktur tersebut berada di `src/features/karyawan` dan dapat dibuka dari menu **Contoh Fitur Karyawan** (`/karyawan-demo`).
 
----
-
-## 📝 Konvensi Penamaan File & Folder (WAJIB!)
-
-### 🇬🇧 Bahasa Inggris untuk Semua Nama
-
-**WAJIB menggunakan bahasa Inggris** untuk:
-
-- File names: `Employee.ts`, `AttendanceTable.tsx`
-- Folder names: `employee-data`, `attendance`
-- Function names: `GetEmployees()`, `CreateAttendance()`
-- Variable names: `employee_data`, `attendance_list`
-
-### 📁 Rules Penamaan Folder
-
-- **Huruf kecil semua**
-- **Multi-kata gunakan '-' (dash)**
-- ✅ Benar: `employee-data`, `user-management`, `data-table`
-- ❌ Salah: `employeeData`, `EmployeeData`, `employee_data`
-
-### 📄 Rules Penamaan File
-
-- **Selalu PascalCase (huruf besar di awal)**
-- ✅ Benar: `EmployeeTable.tsx`, `GetEmployees.ts`, `UseEmployeeData.ts`
-- ❌ Salah: `employeeTable.tsx`, `getEmployees.ts`, `useEmployeeData.ts`
-
-### 🎯 Rules Spesifik per Tipe File
-
-#### Components (.tsx)
-
-- **PascalCase**: `EmployeeTable.tsx`, `AttendanceForm.tsx`
-
-#### Hooks (.ts)
-
-- **PascalCase dengan "Use" prefix**: `UseEmployeeData.ts`, `UseAttendanceForm.ts`
-
-#### Services (.ts)
-
-- **PascalCase**: `FetchEmployees.ts`, `CreateAttendance.ts`
-
-#### Entities/Models (.ts)
-
-- **PascalCase**: `Employee.ts`, `AttendanceModel.ts`
-
-#### Pages (.tsx)
-
-- **PascalCase dengan "Page" suffix**: `EmployeeListPage.tsx`, `AttendanceDetailPage.tsx`
-
-#### Usecases (.ts)
-
-- **PascalCase**: `GetEmployees.ts`, `UpdateAttendance.ts`
-
----
-
-## 🧩 Penjelasan Tiap Layer (Dengan Contoh!)
-
-> ⚠️ **Catatan**: contoh kode `employee`/`attendance` di bawah ini bersifat **ilustratif** untuk menjelaskan pola per-layer — beberapa nama file/folder di sini disederhanakan untuk pembelajaran dan tidak 1:1 sama dengan struktur file di repo. Untuk melihat implementasi yang **benar-benar ada dan jalan**, buka langsung `src/features/landing` (contoh dummy-data) atau `src/features/auth` (contoh real API call, lihat bagian [Contoh Fitur Nyata](#-contoh-fitur-nyata-yang-sudah-jalan-di-repo-ini) di atas).
-
-Kita pakai **fitur employee** sebagai contoh lengkap untuk menjelaskan konsepnya!
-
----
-
-### 1️⃣ Domain Layer (Tempat Aturan Bisnis)
-
-Ini layer **terpenting**! Di sini kita definisikan:
-
-- Apa itu data (entity)
-- Apa yang bisa dilakukan dengan data (usecase)
-
-#### Contoh: `domain/entities/Employee.ts`
-
-Ini definisi tipe data karyawan:
-
-```typescript
-export interface Employee {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  position: string;
-  status: 'active' | 'inactive';
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface EmployeeRepository {
-  GetAll(): Promise<Employee[]>;
-  GetById(id: string): Promise<Employee>;
-  Create(employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>): Promise<Employee>;
-  Update(id: string, employee: Partial<Employee>): Promise<Employee>;
-  Delete(id: string): Promise<void>;
-}
-```
-
-#### Contoh: `domain/usecases/employee-data/GetEmployees.ts`
-
-Ini logic untuk mengambil data karyawan:
-
-```typescript
-import { Employee, EmployeeRepository } from '../entities/Employee';
-
-export const GetEmployees = (repository: EmployeeRepository) => {
-  return async (): Promise<Employee[]> => {
-    return await repository.GetAll();
-  };
-};
-
-export const GetEmployeeById = (repository: EmployeeRepository) => {
-  return async (id: string): Promise<Employee> => {
-    return await repository.GetById(id);
-  };
-};
-```
-
-#### Contoh: `domain/usecases/employee-data/CreateEmployee.ts`
-
-```typescript
-import { Employee, EmployeeRepository } from '../entities/Employee';
-
-export const CreateEmployee = (repository: EmployeeRepository) => {
-  return async (
-    employeeData: Omit<Employee, 'id' | 'created_at' | 'updated_at'>,
-  ): Promise<Employee> => {
-    // Business logic validation
-    if (!employeeData.email.includes('@')) {
-      throw new Error('Invalid email format');
-    }
-
-    return await repository.Create(employeeData);
-  };
-};
-```
-
----
-
-### 2️⃣ Data Layer (Tempat Ngambil Data)
-
-Di sini kita:
-
-- Panggil API ke backend
-- Rubah format data API ke format yang kita butuhkan
-- Hubungkan semuanya di repository
-
-#### Contoh: `data/services/employee-data/FetchEmployees.ts`
-
-Ini yang langsung ngelakuin request ke API:
-
-```typescript
-import { apiClient } from '@/infrastructure/api/apiClient';
-
-export const FetchEmployees = async () => {
-  const response = await apiClient.get('/employees');
-  return response.data;
-};
-
-export const FetchEmployeeById = async (id: string) => {
-  const response = await apiClient.get(`/employees/${id}`);
-  return response.data;
-};
-
-export const CreateEmployee = async (employeeData: any) => {
-  const response = await apiClient.post('/employees', employeeData);
-  return response.data;
-};
-```
-
-#### Contoh: `data/models/employee-data/EmployeeModel.ts`
-
-Ini model untuk response dari API:
-
-```typescript
-export interface EmployeeApiResponse {
-  id: number;
-  firstName: string;
-  lastName: string;
-  emailAddress: string;
-  jobTitle: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface EmployeeCreateRequest {
-  firstName: string;
-  lastName: string;
-  emailAddress: string;
-  jobTitle: string;
-}
-```
-
-#### Contoh: `data/models/employee-data/EmployeeMapper.ts`
-
-Ini untuk rubah format API ke domain:
-
-```typescript
-import { Employee } from '@/features/employee/domain/entities/Employee';
-import { EmployeeApiResponse } from './EmployeeModel';
-
-export const MapApiToEmployee = (apiData: EmployeeApiResponse): Employee => {
-  return {
-    id: apiData.id.toString(),
-    first_name: apiData.firstName,
-    last_name: apiData.lastName,
-    email: apiData.emailAddress,
-    position: apiData.jobTitle,
-    status: apiData.isActive ? 'active' : 'inactive',
-    created_at: new Date(apiData.createdAt),
-    updated_at: new Date(apiData.updatedAt),
-  };
-};
-
-export const MapEmployeeToApi = (employee: Employee): EmployeeCreateRequest => {
-  return {
-    firstName: employee.first_name,
-    lastName: employee.last_name,
-    emailAddress: employee.email,
-    jobTitle: employee.position,
-  };
-};
-```
-
-#### Contoh: `data/repositories/employee-data/EmployeeRepository.ts`
-
-Ini yang hubungin service dan model:
-
-```typescript
-import { EmployeeRepository } from '@/features/employee/domain/entities/Employee';
-import {
-  FetchEmployees,
-  FetchEmployeeById,
-  CreateEmployee,
-} from '../services/employee-data/FetchEmployees';
-import { MapApiToEmployee, MapEmployeeToApi } from '../models/employee-data/EmployeeMapper';
-
-export const EmployeeRepositoryImpl: EmployeeRepository = {
-  GetAll: async (): Promise<Employee[]> => {
-    const rawData = await FetchEmployees();
-    return rawData.map(MapApiToEmployee);
-  },
-
-  GetById: async (id: string): Promise<Employee> => {
-    const rawData = await FetchEmployeeById(id);
-    return MapApiToEmployee(rawData);
-  },
-
-  Create: async (employeeData): Promise<Employee> => {
-    const apiRequest = MapEmployeeToApi(employeeData);
-    const response = await CreateEmployee(apiRequest);
-    return MapApiToEmployee(response);
-  },
-
-  Update: async (id: string, employeeData) => {
-    // Implementation for update
-    throw new Error('Not implemented yet');
-  },
-
-  Delete: async (id: string) => {
-    // Implementation for delete
-    throw new Error('Not implemented yet');
-  },
-};
-```
-
----
-
-### 3️⃣ Presentation Layer (Tempat Tampilan)
-
-Di sini kita:
-
-- Buat halaman dan komponen UI
-- Buat hook untuk logic UI
-- Ngambil data dari domain layer
-
-#### Contoh: `presentation/hooks/employee-data/UseEmployeeData.ts`
-
-Hook untuk ngelola state dan logic:
-
-```typescript
-import { useState, useEffect } from 'react';
-import { Employee } from '@/features/employee/domain/entities/Employee';
-import {
-  GetEmployees,
-  GetEmployeeById,
-} from '@/features/employee/domain/usecases/employee-data/GetEmployees';
-import { CreateEmployee } from '@/features/employee/domain/usecases/employee-data/CreateEmployee';
-import { EmployeeRepositoryImpl } from '@/features/employee/data/repositories/employee-data/EmployeeRepository';
-
-export const UseEmployeeData = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const getAllEmployees = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const getEmployeesUseCase = GetEmployees(EmployeeRepositoryImpl);
-      const result = await getEmployeesUseCase();
-      setEmployees(result);
-    } catch (err) {
-      setError('Failed to fetch employees');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createEmployee = async (
-    employeeData: Omit<Employee, 'id' | 'created_at' | 'updated_at'>,
-  ) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const createEmployeeUseCase = CreateEmployee(EmployeeRepositoryImpl);
-      const newEmployee = await createEmployeeUseCase(employeeData);
-      setEmployees((prev) => [...prev, newEmployee]);
-      return newEmployee;
-    } catch (err) {
-      setError('Failed to create employee');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getAllEmployees();
-  }, []);
-
-  return {
-    employees,
-    loading,
-    error,
-    getAllEmployees,
-    createEmployee,
-  };
-};
-```
-
-#### Contoh: `presentation/components/employee-data/EmployeeTable.tsx`
-
-Komponen tabel untuk menampilkan data karyawan:
-
-```typescript
-import React from 'react';
-import { Employee } from '@/features/employee/domain/entities/Employee';
-
-interface EmployeeTableProps {
-  employees: Employee[];
-  loading: boolean;
-}
-
-export const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, loading }) => {
-  if (loading) {
-    return <div>Loading employees...</div>;
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Name
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Email
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Position
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {employees.map((employee) => (
-            <tr key={employee.id}>
-              <td className="px-6 py-4 whitespace-nowrap">
-                {employee.first_name} {employee.last_name}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                {employee.email}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                {employee.position}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  employee.status === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {employee.status}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-```
-
-#### Contoh: `presentation/pages/employee-data/EmployeeListPage.tsx`
-
-Halaman utama untuk menampilkan daftar karyawan:
-
-```typescript
-import React from 'react';
-import { UseEmployeeData } from '../hooks/employee-data/UseEmployeeData';
-import { EmployeeTable } from '../components/employee-data/EmployeeTable';
-
-export const EmployeeListPage: React.FC = () => {
-  const { employees, loading, error } = UseEmployeeData();
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Employee Management</h1>
-        <p className="mt-2 text-gray-600">Manage your organization's employees</p>
-      </div>
-
-      {error && (
-        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-      <EmployeeTable employees={employees} loading={loading} />
-    </div>
-  );
-};
-```
-
-#### Contoh: `index.ts` (Public API untuk Feature)
-
-Ini file yang mendefinisikan apa saja yang bisa dipakai dari luar feature:
-
-```typescript
-// Export pages untuk routing
-export { EmployeeListPage } from './presentation/pages/employee-data/EmployeeListPage';
-export { EmployeeDetailPage } from './presentation/pages/employee-data/EmployeeDetailPage';
-export { EmployeeFormPage } from './presentation/pages/employee-data/EmployeeFormPage';
-
-// Export hooks untuk dipakai di components lain
-export { UseEmployeeData } from './presentation/hooks/employee-data/UseEmployeeData';
-export { UseEmployeeForm } from './presentation/hooks/employee-data/UseEmployeeForm';
-
-// Export entities untuk dipakai di shared types
-export { Employee, EmployeeRepository } from './domain/entities/Employee';
-
-// Export usecases untuk testing atau advanced usage
-export { GetEmployees, CreateEmployee } from './domain/usecases/employee-data/GetEmployees';
-```
-
----
-
-## 🔄 Cara Pakai Feature di Luar
-
-### Di Routing (App.tsx)
-
-```typescript
-import { EmployeeListPage } from '@/features/employee';
-
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/employees" element={<EmployeeListPage />} />
-      </Routes>
-    </Router>
-  );
-}
-```
-
-### Di Components Lain
-
-```typescript
-import { UseEmployeeData } from '@/features/employee';
-
-export const SomeComponent = () => {
-  const { employees } = UseEmployeeData();
-
-  return <div>Total employees: {employees.length}</div>;
-};
-```
-
----
-
-## 📋 Aturan Penting Yang Harus Kamu Ikuti!
-
-### ✅ Yang Boleh Kamu Lakukan
-
-1. **Gunakan hook untuk logic** - Jangan tulis logic langsung di component
-2. **Pisahkan fitur** - Setiap fitur harus independent (tidak bergantung fitur lain)
-3. **Gunakan alias import** - Contoh: `import { Employee } from '@/features/landing'`
-4. **Tulis type/interface** - Jangan pakai `any`!
-
-### ❌ Yang Jangan Kamu Lakukan
-
-1. **Jangan lompat layer** - Presentation → Domain ← Data (tidak boleh Presentation langsung ke Data!)
-2. **Jangan panggil API langsung di hook/component** - Harus lewat service & repository
-3. **Jangan import fitur lain secara langsung** - Gunakan shared layer atau index.ts
-4. **Jangan tarik business logic di UI** - Semua aturan bisnis harus di domain layer
-
----
-
-## 🏷️ Aturan Penamaan File & Folder
-
-| Jenis         | Contoh                           | Keterangan                       |
-| ------------- | -------------------------------- | -------------------------------- |
-| **Folder**    | `landing`, `user-management`     | Huruf kecil, pakai `-`           |
-| **Component** | `EmployeeTable.tsx`              | PascalCase                       |
-| **Hook**      | `UseEmployees.ts`                | PascalCase, mulai dengan "Use"   |
-| **Page**      | `LandingPage.tsx`                | PascalCase, akhiri dengan "Page" |
-| **Function**  | `GetEmployees()`, `FormatDate()` | PascalCase                       |
-| **Variable**  | `employee_data`, `is_loading`    | Huruf kecil, pakai `_`           |
-
----
-
-## 🎯 Tabel Keputusan Cepat
-
-| Kamu Butuh Apa?   | Tempatnya Dimana?                                              |
-| ----------------- | -------------------------------------------------------------- |
-| Panggil API       | `features/[fitur]/data/services/`                              |
-| Aturan Bisnis     | `features/[fitur]/domain/usecases/`                            |
-| Tampilan UI       | `features/[fitur]/presentation/pages/`                         |
-| Logic UI          | `features/[fitur]/presentation/hooks/`                         |
-| Komponen Reusable | `components/` atau `features/[fitur]/presentation/components/` |
-| Helper Fungsi     | `utils/`                                                       |
-| State Global      | `stores/`                                                      |
-
----
-
-## 🆘 Butuh Bantuan?
-
-Jika kamu bingung:
-
-1. Lihat contoh fitur **landing** (dummy data) atau **auth** (real API call) yang sudah jadi
-2. Buka `/reference-ui` di aplikasi untuk lihat katalog komponen UI yang tersedia
-3. Baca dokumentasi di `documentation/rules/`
-4. Tanya rekan tim yang lebih berpengalaman!
-
----
-
-## 🎯 Tips & Best Practices
-
-### ✅ Yang Harus Dilakukan:
-
-1. **Selalu ikuti struktur folder** yang sudah ditentukan
-2. **Gunakan bahasa Inggris** untuk semua nama file dan folder
-3. **PascalCase untuk file**, **lowercase-dash untuk folder**
-4. **Export lewat index.ts** untuk public API
-5. **Business logic di domain layer**, bukan di UI
-
-### ❌ Yang Tidak Boleh Dilakukan:
-
-1. **Import langsung** dari feature lain (hanya lewat shared)
-2. **Business logic di components/pages**
-3. **Cross-layer dependencies** (presentation import data layer langsung)
-4. **Nama file tidak sesuai konvensi**
-5. **Mix bahasa** dalam penamaan
-
----
-
-## 🚀 Quick Start Template
-
-### Buat Feature Baru
-
-1. Copy folder `landing` sebagai template
-2. Rename sesuai nama feature (contoh: `employee`)
-3. Update semua nama file dan folder sesuai konvensi
-4. Implementasi business logic di domain layer
-5. Tambahkan API calls di data layer
-6. Buat UI di presentation layer
-7. Export yang diperlukan di `index.ts`
-
-### Contoh Struktur untuk Feature `attendance`
-
-```
-features/attendance/
+```text
+src/features/karyawan/
+├── index.ts
 ├── domain/
-│   ├── entities/
-│   │   └── Attendance.ts
-│   └── usecases/
-│       └── attendance/
-│           ├── GetAttendance.ts
-│           └── CreateAttendance.ts
+│   ├── entities/Karyawan.ts
+│   ├── repositories/KaryawanRepository.interface.ts
+│   └── usecases/GetKaryawanUseCase.ts
 ├── data/
-│   ├── models/
-│   │   └── attendance/
-│   │       ├── AttendanceModel.ts
-│   │       └── AttendanceMapper.ts
-│   ├── services/
-│   │   └── attendance/
-│   │       ├── FetchAttendance.ts
-│   │       └── CreateAttendance.ts
-│   └── repositories/
-│       └── attendance/
-│           └── AttendanceRepository.ts
+│   ├── dtos/KaryawanDTO.ts
+│   ├── mappers/KaryawanMapper.ts
+│   ├── services/KaryawanApiService.ts
+│   └── repositories/KaryawanRepositoryImpl.ts
+├── di/KaryawanContainer.ts
 ├── presentation/
-│   ├── hooks/
-│   │   └── attendance/
-│   │       ├── UseAttendanceData.ts
-│   │       └── UseAttendanceForm.ts
-│   ├── components/
-│   │   └── attendance/
-│   │       ├── AttendanceTable.tsx
-│   │       └── AttendanceForm.tsx
-│   └── pages/
-│       └── attendance/
-│           ├── AttendanceListPage.tsx
-│           └── AttendanceFormPage.tsx
-└── index.ts
+│   ├── components/KaryawanTable.tsx
+│   ├── hooks/useKaryawanQuery.ts
+│   ├── pages/KaryawanPage.tsx
+│   └── store/karyawanStore.ts
+└── __tests__/
+    ├── data/
+    ├── domain/
+    └── presentation/
 ```
 
----
+Service saat ini menggunakan data dummy karena endpoint backend belum tersedia. Ketika API sudah siap, ganti sumber data pada `data/services/KaryawanApiService.ts`; alur Domain dan Presentation seharusnya tetap memakai kontrak entity/repository yang sama.
 
-## 📝 Catatan Penting Lainnya
+## Tanggung Jawab Layer
 
-- **Jangan lupa buat branch** sebelum ngoding fitur baru
-- **Selalu jalankan test** sebelum push kode
-- **Follow convention** yang sudah ada - jangan bikin gaya sendiri!
+### Domain
 
-Selamat ngoding! 🚀
+- Berisi entity, kontrak repository, dan use case.
+- Gunakan TypeScript murni; jangan mengimpor React, TanStack Query, Zustand, Axios, atau detail implementasi Data.
+- Kontrak repository didefinisikan di `domain/repositories/`, bukan digabungkan dengan entity.
+- Use case menerima kontrak repository melalui constructor atau parameter. Letakkan aturan bisnis di sini, bukan di komponen UI.
 
----
+### Data
 
-_Last updated: 2026-05-11_
+- Service mengambil data dari API atau sumber data lain. Data dummy sementara juga diletakkan di service, bukan di halaman.
+- DTO mencerminkan format sumber data; mapper mengubah DTO menjadi entity Domain yang bersih.
+- Repository implementasi menghubungkan service dan mapper serta mengimplementasikan kontrak Domain.
+- Data Layer boleh bergantung pada Domain, bukan sebaliknya.
+
+### Dependency Injection (`di/`)
+
+- Merakit service, repository implementasi, dan use case.
+- Hook atau halaman tidak membuat repository maupun mengimpor implementasi Data secara langsung.
+
+### Presentation
+
+- Page dan komponen bertanggung jawab atas tampilan serta interaksi pengguna.
+- Hook menghubungkan UI dengan use case; gunakan TanStack Query untuk state server dan Zustand hanya bila state UI perlu dibagi.
+- Presentation tidak boleh mengakses service, DTO, mapper, atau repository implementasi secara langsung.
+
+### Public API (`index.ts`)
+
+- Ekspor halaman/entry point fitur yang perlu digunakan router atau consumer eksternal.
+- File di luar fitur hanya mengimpor dari `@/features/<feature>`, bukan dari path internal seperti `@/features/<feature>/data/...`.
+- Jangan mengekspor seluruh detail internal fitur tanpa kebutuhan yang jelas.
+
+## Arah Dependensi dan Alur Data
+
+```mermaid
+flowchart TD
+  Router[AppRoutes] --> PublicAPI[Feature index.ts]
+  PublicAPI --> Page[Presentation Page]
+  Page --> Hook[Presentation Hook]
+  Page --> Store[Presentation Store, jika perlu]
+  Hook --> DI[DI Container]
+  DI --> UseCase[Domain Use Case]
+  DI --> RepositoryImpl[Data Repository Implementation]
+  UseCase --> RepositoryContract[Domain Repository Contract]
+  RepositoryImpl -. implements .-> RepositoryContract
+  RepositoryImpl --> Service[Data Service]
+  RepositoryImpl --> Mapper[Data Mapper]
+  Service --> DTO[Data Transfer Object]
+  Mapper --> DTO
+  Mapper --> Entity[Domain Entity]
+  UseCase --> Entity
+```
+
+Alur runtime data:
+
+```text
+Page → Hook → Use Case → Repository contract
+                         ↑
+DI → Repository implementation → Service → DTO
+                              └→ Mapper → Entity → Presentation
+```
+
+Domain tetap independen dari React dan infrastruktur. DI adalah composition root yang mengetahui implementasi Domain dan Data, lalu memberikan use case siap pakai kepada Presentation.
+
+## Batas Antarfitur
+
+- Fitur lain hanya boleh mengakses public API melalui `src/features/<feature>/index.ts`.
+- Jangan melakukan deep import ke `domain/`, `data/`, `di/`, atau `presentation/` milik fitur lain.
+- Untuk UI, hook, type, atau utilitas yang benar-benar digunakan bersama, gunakan lokasi lintas fitur yang sesuai dengan struktur project atau ekstrak ke shared layer sesuai aturan.
+- Router mengimpor halaman dari public API fitur, tidak dari path internal.
+
+## Konvensi
+
+- Gunakan nama berbahasa Inggris untuk identifier dan nama folder fitur; nama folder huruf kecil dengan dash untuk beberapa kata, misalnya `employee-benefits`.
+- Gunakan PascalCase untuk nama file entity, DTO, mapper, service, repository, use case, page, dan component.
+- Nama hook mengikuti pola React `use...`, misalnya `useKaryawanQuery.ts`.
+- Beri tipe pada kontrak dan data; hindari `any`.
+- Pertahankan error agar terlihat oleh pemanggil/UI. Jangan menyamarkan kegagalan dengan nilai sukses atau nilai default yang tidak valid.
+- Hindari menambahkan store bila state hanya dipakai satu komponen dan dapat dikelola lokal.
+
+## Pengujian
+
+Tempatkan pengujian di dalam feature pada `__tests__/` sesuai layer yang diuji:
+
+- `domain/`: aturan use case dan kontrak bisnis.
+- `data/`: konversi mapper dan integrasi repository/service.
+- `presentation/`: perilaku halaman/komponen seperti loading, error, empty state, dan interaksi pencarian.
+
+Jalankan pengujian terfokus selama pengembangan, lalu validasi build dan lint sebelum menggabungkan perubahan:
+
+```powershell
+npm test -- --runInBand src/features/karyawan/__tests__
+npx eslint src/features/karyawan
+npm run build
+```
+
+## Catatan Repository
+
+- `src/features/landing` dan `src/features/auth` adalah implementasi yang sudah ada dengan pola repository sebelumnya. Gunakan contoh `src/features/karyawan` dan dokumen aturan di atas sebagai acuan struktur untuk fitur baru.
+- `src/_reference_ui/` adalah katalog UI referensi; halaman katalog dapat diakses melalui `/reference-ui`.
+- Implementasi autentikasi dan route terlindungi tetap berada pada fitur serta konfigurasi route yang sudah tersedia.
