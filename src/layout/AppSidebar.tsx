@@ -34,6 +34,11 @@ const navItems: NavItem[] = [
   },
   {
     icon: <> {IconKaryawan({ size: 16 })} </>,
+    name: 'Contoh Fitur Karyawan',
+    path: '/karyawan-demo',
+  },
+  {
+    icon: <> {IconKaryawan({ size: 16 })} </>,
     name: 'Data Master Karyawan',
 
     subItems: [

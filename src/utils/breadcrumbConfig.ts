@@ -91,6 +91,10 @@ export const breadcrumbRoutes: Record<string, RouteConfig> = {
     title: 'Data Master Karyawan',
     breadcrumbs: () => [{ label: 'Data Karyawan' }],
   },
+  '/karyawan-demo': {
+    title: 'Contoh Fitur Karyawan',
+    breadcrumbs: () => [{ label: 'Daftar Karyawan' }],
+  },
   '/employee-data/pendaftaran': {
     title: 'Data Master Karyawan',
     breadcrumbs: () => [
