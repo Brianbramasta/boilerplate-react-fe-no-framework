@@ -219,7 +219,7 @@ export const useKaryawanQuery = () => {
 
 Gunakan kode dengan hati-hati.
 
-📁 `presentation/store/karyawanStore.ts`
+📁 `presentation/store/useKaryawanStore.ts`
 
 - **Fungsi:** Menyimpan state lokal UI yang kompleks untuk fitur ini (misal pencarian/filter aktif), menggunakan Zustand.
 - **Contoh Isi:**
@@ -252,7 +252,7 @@ tsx
 ```javascript
 import React from "react";
 import { useKaryawanQuery } from "../hooks/useKaryawanQuery";
-import { useKaryawanStore } from "../store/karyawanStore";
+import { useKaryawanStore } from "../store/useKaryawanStore";
 import { Button } from "@/shared/components/ui/Button"; // Contoh import dari shared ui
 
 export const KaryawanPage: React.FC = () => {
@@ -285,6 +285,12 @@ export const KaryawanPage: React.FC = () => {
 Gunakan kode dengan hati-hati.
 
 ---
+
+💡 **Tips Praktis untuk Implementation Lanjutan**
+
+• **Pengecualian untuk CRUD Sederhana**: Untuk fitur CRUD dasar tanpa logika bisnis rumit, tim harus menyepakati **kapan boleh melewati UseCase**. Pola alternatif: memanggil Repository langsung via DI Container di Hook.
+
+• **Zustand Hook Naming**: Gunakan **camelCase** nama file di `presentation/store/` (misal: `useKaryawanStore.ts`). Ekspor hook dengan nama serupa: `export const useKaryawanStore = create<KaryawanState>(...)`.
 
 🚪 5. Feature Public API (`index.ts` Utama)
 

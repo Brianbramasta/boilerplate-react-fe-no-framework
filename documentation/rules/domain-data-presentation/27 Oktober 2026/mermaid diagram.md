@@ -31,7 +31,7 @@ graph TD
         subgraph Presentation_Layer [🎨 Presentation Layer]
             page[KaryawanPage.tsx]:::pres
             comp[Components <br>KaryawanCard.tsx]:::pres
-            store[Store <br>karyawanStore.ts]:::pres
+            store[Store <br>useKaryawanStore.ts]:::pres
             hook[Hooks <br>useKaryawanQuery.ts]:::pres
         end
 
@@ -140,5 +140,13 @@ Gunakan kode dengan hati-hati.
 1. **Paling Suci (Hijau/Domain):** Kotak hijau di tengah tidak memiliki panah keluar menuju layer data atau presentation. Dia terisolasi sempurna dan hanya menerima perintah.
 2. **Pabrik Perakitan (Abu-abu/DI):** Menjadi satu-satunya area yang boleh menyentuh Domain dan Data sekaligus untuk merakit fungsi (UseCase) sebelum diberikan ke Presentation Layer.
 3. **Pintu Gerbang (Pintu Cokelat/Public API):** Pihak luar seperti `AppRouter` dilarang keras mengintip kotak merah (`Private_Code`). Semua akses wajib melalui `index.ts` (Pintu Hijau).
+
+---
+
+💡 **Tip Tambahan untuk Hindari Over-Engineering**
+
+• **Pengecualian untuk CRUD Sederhana**: Jika fitur Anda hanya berupa CRUD dasar tanpa logika bisnis yang rumit, pertimbangkan untuk **melewati UseCase** dan memanggil Repository langsung dari Hook. Tim Anda harus menyepakati kapan sebuah fitur boleh melewati UseCase dan langsung memanggil Repository via Container.
+
+• **Zustand Hook Naming**: Pastikan penamaan file store di `presentation/store/` tetap konsisten menggunakan **camelCase** (misal: `useKaryawanStore.ts`). Ekspor hook dengan nama yang sama agar selaras dengan ekosistem React.
 
 Apakah Anda ingin saya buatkan **contoh file tiruan (Mock Repository)** di dalam arsitektur ini agar Anda bisa melihat bagaimana DI Layer secara instan menukar data API menjadi data lokal saat melakukan **Unit Testing**?

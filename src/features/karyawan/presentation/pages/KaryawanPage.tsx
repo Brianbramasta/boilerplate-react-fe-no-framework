@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import KaryawanTable from '../components/KaryawanTable';
 import { useKaryawanQuery } from '../hooks/useKaryawanQuery';
-import { useKaryawanStore } from '../store/karyawanStore';
+import { useKaryawanStore } from '../store/useKaryawanStore';
 
 export function KaryawanPage() {
   const { data: karyawan = [], error, isLoading, refetch } = useKaryawanQuery();

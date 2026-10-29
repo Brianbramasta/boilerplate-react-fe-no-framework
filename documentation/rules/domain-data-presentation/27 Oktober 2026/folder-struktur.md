@@ -60,7 +60,7 @@ src/
 │   │   └── ui/
 │   ├── hooks/                 # Hooks global (useDebounce, useLocalStorage)
 │   ├── store/                 # Global Store (Data Login User, Theme, dll)
-│   │   └── authStore.ts
+│   │   └── useAuthStore.ts
 │   ├── utils/                 # Helper murni (formatDate, currencyFormatter)
 │   └── types/                 # Global & Utility Types
 │
@@ -86,5 +86,13 @@ Gunakan kode dengan hati-hati.
     `const repo = new KaryawanRepositoryImpl()`  
     `export const getKaryawanUseCase = new GetKaryawanUseCase(repo)`  
     Sehingga di dalam _Presentation Hooks_, Anda tinggal mengimport `getKaryawanUseCase` yang sudah matang tanpa perlu mengimport layer data lagi.
+
+---
+
+💡 **Tip Tambahan untuk Hindari Over-Engineering**
+
+• **Pengecualian untuk CRUD Sederhana**: Jika fitur Anda hanya berupa CRUD dasar tanpa logika bisnis yang rumit (misal: daftar data statis dengan filter sederhana), pertimbangkan untuk **melewati UseCase** dan memanggil Repository langsung dari Hook. Tim Anda harus menyepakati kapan sebuah fitur boleh melewati UseCase dan langsung memanggil Repository via Container. Contoh pola: `useQuery({ queryFn: () => container.karyawanRepo.getAllKaryawan() })`.
+
+• **Zustand Hook Naming**: Pastikan penamaan file store di `presentation/store/` tetap konsisten menggunakan **camelCase** (misal: `useKaryawanStore.ts`, bukan `KaryawanStore.ts`). Ekspor hook dengan nama yang sama: `export const useKaryawanStore = create<KaryawanState>(...)`. Ini selaras dengan ekosistem React dan memudahkan pencarian.
 
 Apakah Anda ingin saya buatkan **contoh potongan kode (code snippet)** konkret untuk satu alur fitur di atas? Mulai dari **API DTO → Mapper → Usecase → DI Container → hingga dipakai di Hook/TanStack Query**, agar tim Anda punya blueprint coding yang jelas?
