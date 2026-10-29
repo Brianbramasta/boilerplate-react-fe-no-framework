@@ -145,8 +145,6 @@ Gunakan kode dengan hati-hati.
 
 💡 **Tip Tambahan untuk Hindari Over-Engineering**
 
-• **Pengecualian untuk CRUD Sederhana**: Jika fitur Anda hanya berupa CRUD dasar tanpa logika bisnis yang rumit, pertimbangkan untuk **melewati UseCase** dan memanggil Repository langsung dari Hook. Tim Anda harus menyepakati kapan sebuah fitur boleh melewati UseCase dan langsung memanggil Repository via Container.
-
 • **Zustand Hook Naming**: Pastikan penamaan file store di `presentation/store/` tetap konsisten menggunakan **camelCase** (misal: `useKaryawanStore.ts`). Ekspor hook dengan nama yang sama agar selaras dengan ekosistem React.
 
 Apakah Anda ingin saya buatkan **contoh file tiruan (Mock Repository)** di dalam arsitektur ini agar Anda bisa melihat bagaimana DI Layer secara instan menukar data API menjadi data lokal saat melakukan **Unit Testing**?

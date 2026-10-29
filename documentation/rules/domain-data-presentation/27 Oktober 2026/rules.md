@@ -288,7 +288,6 @@ Gunakan kode dengan hati-hati.
 
 💡 **Tips Praktis untuk Implementation Lanjutan**
 
-• **Pengecualian untuk CRUD Sederhana**: Untuk fitur CRUD dasar tanpa logika bisnis rumit, tim harus menyepakati **kapan boleh melewati UseCase**. Pola alternatif: memanggil Repository langsung via DI Container di Hook.
 
 • **Zustand Hook Naming**: Gunakan **camelCase** nama file di `presentation/store/` (misal: `useKaryawanStore.ts`). Ekspor hook dengan nama serupa: `export const useKaryawanStore = create<KaryawanState>(...)`.
 
