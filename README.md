@@ -12,12 +12,20 @@ Gunakan tiga dokumen ini sebagai sumber aturan ketika menambah atau mengubah fit
 
 Jika contoh implementasi di tempat lain berbeda, ikuti aturan dan struktur pada dokumen-dokumen di atas untuk fitur baru.
 
+## Ringkasan Perubahan Utama
+
+- **Dependency Injection Layer (`di/`)**: Folder untuk merakit service, repository, dan use case secara terpusat.
+- **Standardisasi Mapping Data (`DTO` & `Mapper`)**: DTO untuk data mentah, mapper untuk konversi ke entity Domain.
+- **Modern State Management**: TanStack Query untuk server state, Zustand untuk local UI state.
+- **Naming Convention**: camelCase untuk file store dan hooks, PascalCase untuk entity/DTO/mapper/service/repository/useCase.
+- **Public API (`index.ts`)**: Satu-satunya point masuk untuk fitur, mencegah deep import.
+
 ## Teknologi
 
 - React 19, TypeScript strict mode, dan Vite
 - React Router untuk routing
 - TanStack Query untuk state server
-- Zustand untuk state UI lokal yang memang perlu dibagi
+- Zustand untuk state UI lokal
 - Tailwind CSS untuk styling
 - Jest dan Testing Library untuk pengujian
 
@@ -41,11 +49,11 @@ npm run format:check
 npm run build
 ```
 
-`npm run build` menjalankan type-check TypeScript dan production build Vite. Script development dan build juga memperbarui manifest komponen `src/_reference_ui/manifest.ts`.
+`npm run build` menjalankan type-check TypeScript dan production build Vite.
 
 ## Struktur Feature
 
-Struktur feature mengikuti aturan project. Tidak semua folder wajib dibuat: tambahkan hanya bagian yang dibutuhkan oleh fitur.
+Struktur feature mengikuti aturan project. Tidak semua folder wajib dibuat: tambahkan hanya bagian yang dibutuhkan.
 
 ```text
 src/
@@ -55,155 +63,153 @@ src/
 │       ├── domain/
 │       │   ├── entities/                    # Entity bisnis murni
 │       │   ├── repositories/                # Kontrak repository
-│       │   └── usecases/                    # Alur dan aturan bisnis
+│       │   └── usecases/                    # Aturan bisnis
 │       ├── data/
 │       │   ├── dtos/                        # Bentuk data dari sumber data
 │       │   ├── mappers/                     # DTO <-> entity
-│       │   ├── services/                    # Akses API atau sumber data lain
+│       │   ├── services/                    # Akses API
 │       │   └── repositories/                # Implementasi kontrak Domain
-│       ├── di/                              # Merakit service, repository, use case
 │       ├── presentation/
 │       │   ├── components/                  # Komponen UI khusus fitur
-│       │   ├── hooks/                       # Adapter UI, termasuk TanStack Query
+│       │   ├── hooks/                       # TanStack Query, adapter UI
 │       │   ├── pages/                       # Halaman fitur
-│       │   └── store/                       # State UI lokal jika dibutuhkan
+│       │   └── store/                       # State UI lokal (Zustand)
+│       ├── di/                              # DI Container, factory engine
 │       └── __tests__/
-│           ├── domain/
-│           ├── data/
-│           └── presentation/
-├── components/                              # Komponen lintas fitur yang sudah ada
-├── hooks/                                   # Hook lintas fitur yang sudah ada
-├── stores/                                  # State global aplikasi yang sudah ada
+├── components/
+├── hooks/
+├── stores/
 ├── routes/
-│   └── AppRoutes.tsx                        # Registrasi route aplikasi
+│   └── AppRoutes.tsx
 ├── layout/
 ├── utils/
 ├── App.tsx
 └── main.tsx
 ```
 
-`shared/` dan `infrastructure/` pada blueprint dokumentasi adalah batas tanggung jawab arsitektur. Sebelum menambah folder global baru, periksa folder global yang sudah tersedia di project agar tidak membuat duplikasi.
-
 ### Contoh Implementasi: Fitur Karyawan
 
-Fitur demo yang mengikuti struktur tersebut berada di `src/features/karyawan` dan dapat dibuka dari menu **Contoh Fitur Karyawan** (`/karyawan-demo`).
-
-```text
-src/features/karyawan/
-├── index.ts
-├── domain/
-│   ├── entities/Karyawan.ts
-│   ├── repositories/KaryawanRepository.interface.ts
-│   └── usecases/GetKaryawanUseCase.ts
-├── data/
-│   ├── dtos/KaryawanDTO.ts
-│   ├── mappers/KaryawanMapper.ts
-│   ├── services/KaryawanApiService.ts
-│   └── repositories/KaryawanRepositoryImpl.ts
-├── di/KaryawanContainer.ts
-├── presentation/
-│   ├── components/KaryawanTable.tsx
-│   ├── hooks/useKaryawanQuery.ts
-│   ├── pages/KaryawanPage.tsx
-│   └── store/karyawanStore.ts
-└── __tests__/
-    ├── data/
-    ├── domain/
-    └── presentation/
-```
-
-Service saat ini menggunakan data dummy karena endpoint backend belum tersedia. Ketika API sudah siap, ganti sumber data pada `data/services/KaryawanApiService.ts`; alur Domain dan Presentation seharusnya tetap memakai kontrak entity/repository yang sama.
+Fitur demo di `src/features/karyawan` dapat dibuka dari `/karyawan-demo`.
 
 ## Tanggung Jawab Layer
 
 ### Domain
 
-- Berisi entity, kontrak repository, dan use case.
-- Gunakan TypeScript murni; jangan mengimpor React, TanStack Query, Zustand, Axios, atau detail implementasi Data.
-- Kontrak repository didefinisikan di `domain/repositories/`, bukan digabungkan dengan entity.
-- Use case menerima kontrak repository melalui constructor atau parameter. Letakkan aturan bisnis di sini, bukan di komponen UI.
+- Entity, kontrak repository, dan use case.
+- TypeScript murni; tidak mengimpor React, TanStack Query, Zustand, Axios.
+- Kontrak repository di `domain/repositories/`.
+- Use case menerima kontrat repository lewat constructor.
 
 ### Data
 
-- Service mengambil data dari API atau sumber data lain. Data dummy sementara juga diletakkan di service, bukan di halaman.
-- DTO mencerminkan format sumber data; mapper mengubah DTO menjadi entity Domain yang bersih.
-- Repository implementasi menghubungkan service dan mapper serta mengimplementasikan kontrak Domain.
-- Data Layer boleh bergantung pada Domain, bukan sebaliknya.
+- Service mengambil data dari API.
+- DTO merepresentasikan format API; mapper mengubah ke entity Domain.
+- Repository implementasi mengimplementasikan kontrat Domain.
+- Data Layer boleh bergantung pada Domain.
 
-### Dependency Injection (`di/`)
+### DI (`di/`)
 
-- Merakit service, repository implementasi, dan use case.
-- Hook atau halaman tidak membuat repository maupun mengimpor implementasi Data secara langsung.
+- Merakit service, repository, use case.
+- Presentation tidak membuat repository secara langsung.
 
 ### Presentation
 
-- Page dan komponen bertanggung jawab atas tampilan serta interaksi pengguna.
-- Hook menghubungkan UI dengan use case; gunakan TanStack Query untuk state server dan Zustand hanya bila state UI perlu dibagi.
-- Presentation tidak boleh mengakses service, DTO, mapper, atau repository implementasi secara langsung.
+- Page dan komponen untuk tampilan pengguna.
+- Hook menghubungkan UI dengan use case; gunakan TanStack Query, Zustand hanya bila perlu.
+- Tidak mengakses service, DTO, mapper, repository implementasi langsung.
 
 ### Public API (`index.ts`)
 
-- Ekspor halaman/entry point fitur yang perlu digunakan router atau consumer eksternal.
-- File di luar fitur hanya mengimpor dari `@/features/<feature>`, bukan dari path internal seperti `@/features/<feature>/data/...`.
-- Jangan mengekspor seluruh detail internal fitur tanpa kebutuhan yang jelas.
+- Ekspor halaman/entry point fitur.
+- File luar hanya mengimpor dari `@/features/<feature>`.
+- Jangan mengekspor detail internal tanpa kebutuhan.
 
-## Arah Dependensi dan Alur Data
+## Arah Dependensi
 
 ```mermaid
-flowchart TD
-  Router[AppRoutes] --> PublicAPI[Feature index.ts]
-  PublicAPI --> Page[Presentation Page]
-  Page --> Hook[Presentation Hook]
-  Page --> Store[Presentation Store, jika perlu]
-  Hook --> DI[DI Container]
-  DI --> UseCase[Domain Use Case]
-  DI --> RepositoryImpl[Data Repository Implementation]
-  UseCase --> RepositoryContract[Domain Repository Contract]
-  RepositoryImpl -. implements .-> RepositoryContract
-  RepositoryImpl --> Service[Data Service]
-  RepositoryImpl --> Mapper[Data Mapper]
-  Service --> DTO[Data Transfer Object]
-  Mapper --> DTO
-  Mapper --> Entity[Domain Entity]
-  UseCase --> Entity
+graph TD
+    %% Styling
+    classDef domain fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#155724;
+    classDef data fill:#cce5ff,stroke:#007bff,stroke-width:2px,color:#004085;
+    classDef pres fill:#fff3cd,stroke:#ffc107,stroke-width:2px,color:#856404;
+    classDef di fill:#e2e3e5,stroke:#6c757d,stroke-width:2px,color:#383d41;
+    classDef infra fill:#f8d7da,stroke:#dc3545,stroke-width:2px,color:#721c24;
+
+    subgraph Global_Infra [🌐 Global Infrastructure & Shared]
+        apiClient[apiClient.ts<br>Axios/Fetch]:::infra
+        sharedUI[Shared UI Kit]:::infra
+    end
+
+    subgraph Feature_Karyawan [📦 Feature: Karyawan]
+        publicAPI[🚪 index.ts<br>Public API]:::pres
+        subgraph Presentation_Layer [🎨 Presentation Layer]
+            page[KaryawanPage.tsx]:::pres
+            comp[Components<br>KaryawanCard.tsx]:::pres
+            store[Store<br>useKaryawanStore.ts]:::pres
+            hook[Hooks<br>useKaryawanQuery.ts]:::pres
+        end
+        subgraph DI_Layer [🔌 DI Layer]
+            container[KaryawanContainer.ts]:::di
+        end
+        subgraph Domain_Layer [🧠 Domain Layer - PURE TS]
+            usecase[GetKaryawanUseCase.ts]:::domain
+            repoInterface[IKaryawanRepository.interface.ts]:::domain
+            entity[Karyawan.ts<br>Entities]:::domain
+        end
+        subgraph Data_Layer [💾 Data Layer]
+            repoImpl[KaryawanRepositoryImpl.ts]:::data
+            service[KaryawanApiService.ts]:::data
+            mapper[KaryawanMapper.ts]:::data
+            dto[KaryawanDTO.ts]:::data
+        end
+    end
+
+    page --> hook
+    page --> store
+    comp --> page
+    hook --> container
+    container --> usecase
+    container --> repoImpl
+    container --> service
+    usecase --> repoInterface
+    repoInterface --> entity
+    repoImpl -.->|Implements| repoInterface
+    repoImpl --> mapper
+    repoImpl --> service
+    service --> dto
+    mapper --> dto
+    mapper --> entity
+    service --> apiClient
+    page --> sharedUI
+    publicAPI --> page
+    publicAPI --> entity
+    AppRouter[AppRouter.tsx] -->|Only access main gate| publicAPI
 ```
-
-Alur runtime data:
-
-```text
-Page → Hook → Use Case → Repository contract
-                         ↑
-DI → Repository implementation → Service → DTO
-                              └→ Mapper → Entity → Presentation
-```
-
-Domain tetap independen dari React dan infrastruktur. DI adalah composition root yang mengetahui implementasi Domain dan Data, lalu memberikan use case siap pakai kepada Presentation.
 
 ## Batas Antarfitur
 
-- Fitur lain hanya boleh mengakses public API melalui `src/features/<feature>/index.ts`.
-- Jangan melakukan deep import ke `domain/`, `data/`, `di/`, atau `presentation/` milik fitur lain.
-- Untuk UI, hook, type, atau utilitas yang benar-benar digunakan bersama, gunakan lokasi lintas fitur yang sesuai dengan struktur project atau ekstrak ke shared layer sesuai aturan.
-- Router mengimpor halaman dari public API fitur, tidak dari path internal.
+- Fitur lain hanya mengakses public API melalui `src/features/<feature>/index.ts`.
+- Jangan melakukan deep import ke `domain/`, `data/`, `di/`, atau `presentation/` fitur lain.
+- Untuk UI, hook, type, atau utilitas yang digunakan bersama, gunakan folder lintas fitur atau shared layer.
 
 ## Konvensi
 
-- Gunakan nama berbahasa Inggris untuk identifier dan nama folder fitur; nama folder huruf kecil dengan dash untuk beberapa kata, misalnya `employee-benefits`.
-- Gunakan PascalCase untuk nama file entity, DTO, mapper, service, repository, use case, page, dan component.
-- Nama hook mengikuti pola React `use...`, misalnya `useKaryawanQuery.ts`.
+- Nama folder feature: lowercase dengan dash (`employee-benefits`).
+- PascalCase untuk file entity, DTO, mapper, service, repository, use case, page, komponen.
+- Hook ikuti pola React `use...`, contoh: `useKaryawanQuery.ts`.
 - Beri tipe pada kontrak dan data; hindari `any`.
-- Pertahankan error agar terlihat oleh pemanggil/UI. Jangan menyamarkan kegagalan dengan nilai sukses atau nilai default yang tidak valid.
-- Hindari menambahkan store bila state hanya dipakai satu komponen dan dapat dikelola lokal.
+- Pertahankan error agar terlihat oleh UI.
+- Hindari store bila state hanya dipakai satu komponen.
 
 ## Pengujian
 
-Tempatkan pengujian di dalam feature pada `__tests__/` sesuai layer yang diuji:
+Tempatkan pengujian di `__tests__/` sesuai layer:
 
-- `domain/`: aturan use case dan kontrak bisnis.
-- `data/`: konversi mapper dan integrasi repository/service.
-- `presentation/`: perilaku halaman/komponen seperti loading, error, empty state, dan interaksi pencarian.
+- `domain/`: UseCase dan aturan bisnis (gunakan mock repository).
+- `data/`: Mapper dan integrasi repository/service.
+- `presentation/`: Halaman/komponen, loading, error, interaksi.
 
-Jalankan pengujian terfokus selama pengembangan, lalu validasi build dan lint sebelum menggabungkan perubahan:
+Jalankan pengujian:
 
 ```powershell
 npm test -- --runInBand src/features/karyawan/__tests__
@@ -213,6 +219,6 @@ npm run build
 
 ## Catatan Repository
 
-- `src/features/landing` dan `src/features/auth` adalah implementasi yang sudah ada dengan pola repository sebelumnya. Gunakan contoh `src/features/karyawan` dan dokumen aturan di atas sebagai acuan struktur untuk fitur baru.
-- `src/_reference_ui/` adalah katalog UI referensi; halaman katalog dapat diakses melalui `/reference-ui`.
-- Implementasi autentikasi dan route terlindungi tetap berada pada fitur serta konfigurasi route yang sudah tersedia.
+- `src/features/landing` dan `src/features/auth` menggunakan pola repository lama. Gunakan `src/features/karyawan` sebagai contoh untuk fitur baru.
+- `src/_reference_ui/` adalah katalog UI referensi; dapat diakses melalui `/reference-ui`.
+- Implementasi autentikasi dan route terlindungi tetap ada pada fitur yang sudah ada.
